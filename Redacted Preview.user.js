@@ -4,7 +4,7 @@
 // @version      0.1
 // @description  Preview songs on Redacted
 // @author       John Bednarczyk
-// @match        https://redacted.ch/*
+// @match        https://redacted.ch/torrents*
 // @grant        none
 // @require      http://code.jquery.com/jquery-latest.js
 // ==/UserScript==
@@ -13,51 +13,57 @@
 (function () {
     'use strict';
 
+    // API KEY
+    var apiKey = "YOUR_API_HERE";
+
     // URL to add video link to
     var youtubeURL = "https://www.youtube.com/watch?v=";
 
-    // Get the section that contains song details
-    var albumInfo = document.getElementsByClassName("box torrent_description")[0].lastElementChild
-
     // Get list of all songs
-    var song = $("span").filter(function() { return ($(this).text().indexOf('(') > -1) }); // anywhere match
+    var song = $("span").filter( function() {
+        return ($(this).text().indexOf('(') > -1);
+    }); // anywhere match
 
     // Change the text for every song, also assigns class to each song
     for(var i = 0 ; i < song.length ; i++){
         song[i].setAttribute("class","song");
+        song[i].setAttribute("id","song"+i);
 
-        var aTag = document.createElement('a');
+        // Create Button
+        var button = document.createElement('button');
+        button.setAttribute("class","play");
 
-        var artist = document.getElementsByTagName("h2")[0].firstChild.text;
+        // Set Style
+        button.style.background='LightBlue';
+        button.style.borderRadius = "3px";
+        button.style.padding = "3px 3px 3px 3px";
 
-        var songTitle = song[i].previousSibling.nodeValue;
-
-        var link = youtubeURL + getLink(artist, songTitle);
-
-        // todo: Need to call some function to get correct youtube video
-        aTag.setAttribute('href', link);
-
-        // Open link in new window
-        aTag.setAttribute('target',"_blank");
-
-        // Name of text
-        aTag.innerHTML = "Link";
+        button.innerHTML = "Play";
 
         // Add Spacing
         song[i].appendChild(document.createTextNode(" "));
 
         // Add link to end of song
-        song[i].appendChild(aTag);
+        song[i].appendChild(button);
     }
 
-    // Function to get a single
+    // Detect button click
+    $('button.play').click(function() {
+
+        // Get Artist
+        var artist = document.getElementsByTagName("h2")[0].firstChild.text;
+        var songTitle = this.previousSibling.parentElement.previousSibling.textContent;
+
+        window.open(youtubeURL + getLink(artist, songTitle));
+    });
+
+    // Function to get a VideoID
     function getLink(artist, song){
 
-        // API Key
-        var key = "AIzaSyCuBAEyb2GnQHCcMo0AQBQ057DFt1yu1zY";
-
         // Setup url for api
-        var url = 'https://www.googleapis.com/youtube/v3/search?part=id&q=' + artist + "-" + song + '&maxResults:1&key=' + key;
+        var url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&q=' +
+            encodeURIComponent(artist) + "-" +
+            encodeURIComponent(song) + '&maxResults=1&fields=items(id(videoId))&key=' + apiKey;
 
         // call api and get videoId
         var xhReq = new XMLHttpRequest();
@@ -67,10 +73,4 @@
 
         return id.items[0].id.videoId;
     }
-
-    // Debug
-    console.log(albumInfo);
-    console.log(song);
-
-
 })();
